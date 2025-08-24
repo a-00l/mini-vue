@@ -1,16 +1,16 @@
-import { isObject } from "../utils/index.js";
+import { hasChanged, isObject } from "../utils/index.js";
 import { track, trigger } from "./effect.js";
 
 // 用来记录被代理了的对象
 const proxyMap = new WeakMap()
 export function reactive(target) {
   // 不是对象，返回原来值
-  if (!isObject) {
+  if (!isObject(target)) {
     return target
   }
 
   // 如果被代理的是reactive，则返回原来的值
-  if (isReactive) {
+  if (isReactive(target)) {
     return target
   }
 
@@ -30,10 +30,14 @@ export function reactive(target) {
       return Reflect.get(target, key, receiver)
     },
     set(target, key, value, receiver) {
+      const oldValue = target[key]
       // 更新值
       const res = Reflect.set(target, key, value, receiver)
-      // 触发effect
-      trigger(target, key)
+      if (hasChanged(oldValue, value)) {
+        // 触发effect
+        trigger(target, key)
+      }
+
       return res
     }
   })
