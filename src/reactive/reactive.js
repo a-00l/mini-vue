@@ -16,7 +16,7 @@ export function reactive(target) {
 
   // 如果对象已经被代理了，则返回该对象
   if (proxyMap.has(target)) {
-    return target
+    return proxyMap.get(target)
   }
 
   const proxy = new Proxy(target, {
@@ -25,9 +25,11 @@ export function reactive(target) {
         return true
       }
 
+      const res = Reflect.get(target, key, receiver)
+      debugger
       // 收集effect
       track(target, key)
-      return Reflect.get(target, key, receiver)
+      return isObject(res) ? reactive(res) : res
     },
     set(target, key, value, receiver) {
       const oldValue = target[key]
