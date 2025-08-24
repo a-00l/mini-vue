@@ -19,6 +19,7 @@ export function effect(fn, options = {}) {
     effectFn()
   }
 
+  // 记录computed中的调度器
   effectFn.scheduler = options.scheduler
   return effectFn
 }
@@ -65,7 +66,6 @@ export function trigger(target, key) {
 
   // 触发依赖
   dep.forEach(effectFn => {
-    debugger
     if (effectFn.scheduler) {
       // 触发computed调度器
       effectFn.scheduler(effectFn)

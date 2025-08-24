@@ -7,9 +7,11 @@ export function computed(getter) {
 class computedImpl {
   constructor(getter) {
     this._value = null
+    // 控制是否收集依赖
     this._dirty = true
     this.effect = effect(getter, {
       lazy: true,
+      // 手动触发依赖
       scheduler: () => {
         this._dirty = true
         trigger(this, 'value')
