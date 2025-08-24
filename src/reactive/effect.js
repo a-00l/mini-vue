@@ -2,15 +2,16 @@ let activeEffect;
 export function effect(fn) {
   const effectFn = () => {
     try {
+      // 收集effect
+      activeEffect = effectFn
       fn()
     } finally {
       // TODO：错误处理
+      activeEffect = null
     }
   }
-  // 收集effect
-  activeEffect = effectFn
+
   effectFn()
-  activeEffect = null
 }
 
 const targetMap = new WeakMap()
