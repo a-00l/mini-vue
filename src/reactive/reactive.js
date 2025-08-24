@@ -35,9 +35,11 @@ export function reactive(target) {
       const oldLenght = target.length
       // 更新值
       const res = Reflect.set(target, key, value, receiver)
+      // 3.与原来值不一样再触发effect
       if (hasChanged(oldValue, value)) {
         // 触发effect
         trigger(target, key)
+        // 5.处理数组中的方法（只实现了一种，其他类似：push、pop）
         if (isArray(target) && hasChanged(oldLenght, target[key])) {
           trigger(target, 'length')
         }
