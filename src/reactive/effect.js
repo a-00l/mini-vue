@@ -1,20 +1,26 @@
 let activeEffect;
 const effectStack = []
-export function effect(fn) {
+export function effect(fn, options = {}) {
   const effectFn = () => {
     try {
       // 收集effect
       activeEffect = effectFn
       effectStack.push(activeEffect)
 
-      fn()
+      return fn()
     } finally {
       effectStack.pop()
       activeEffect = effectStack[effectStack.length - 1]
     }
   }
 
-  effectFn()
+  // computed执行
+  if (!options.lazy) {
+    effectFn()
+  }
+
+  effectFn.scheduler = options.scheduler
+  return effectFn
 }
 
 const targetMap = new WeakMap()
@@ -59,6 +65,12 @@ export function trigger(target, key) {
 
   // 触发依赖
   dep.forEach(effectFn => {
-    effectFn()
+    debugger
+    if (effectFn.scheduler) {
+      // 触发computed调度器
+      effectFn.scheduler(effectFn)
+    } else {
+      effectFn()
+    }
   });
 }
