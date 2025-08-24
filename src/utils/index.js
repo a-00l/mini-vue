@@ -6,3 +6,7 @@ export function isObject(target) {
 export function hasChanged(oldValue, newValue) {
   return oldValue !== newValue && !(isNaN(oldValue) && isNaN(newValue))
 }
+
+export function isArray(target) {
+  return Array.isArray(target)
+}

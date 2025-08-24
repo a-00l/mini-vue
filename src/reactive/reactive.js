@@ -1,4 +1,4 @@
-import { hasChanged, isObject } from "../utils/index.js";
+import { hasChanged, isArray, isObject } from "../utils/index.js";
 import { track, trigger } from "./effect.js";
 
 // 用来记录被代理了的对象
@@ -26,18 +26,21 @@ export function reactive(target) {
       }
 
       const res = Reflect.get(target, key, receiver)
-      debugger
       // 收集effect
       track(target, key)
       return isObject(res) ? reactive(res) : res
     },
     set(target, key, value, receiver) {
       const oldValue = target[key]
+      const oldLenght = target.length
       // 更新值
       const res = Reflect.set(target, key, value, receiver)
       if (hasChanged(oldValue, value)) {
         // 触发effect
         trigger(target, key)
+        if (isArray(target) && hasChanged(oldLenght, target[key])) {
+          trigger(target, 'length')
+        }
       }
 
       return res
