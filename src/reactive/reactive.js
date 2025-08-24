@@ -1,6 +1,8 @@
 import { isObject } from "../utils/index.js";
 import { track, trigger } from "./effect.js";
 
+// 用来记录被代理了的对象
+const proxyMap = new WeakMap()
 export function reactive(target) {
   // 不是对象，返回原来值
   if (!isObject) {
@@ -12,7 +14,12 @@ export function reactive(target) {
     return target
   }
 
-  return new Proxy(target, {
+  // 如果对象已经被代理了，则返回该对象
+  if (proxyMap.has(target)) {
+    return target
+  }
+
+  const proxy = new Proxy(target, {
     get(target, key, receiver) {
       if (key === '__isReactive') {
         return true
@@ -30,6 +37,10 @@ export function reactive(target) {
       return res
     }
   })
+
+  // 记录proxy
+  proxyMap.set(target, proxy)
+  return proxy
 }
 
 // 如果target已经被代理了，那么执行target.__isReactive则会被get捕获
