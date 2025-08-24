@@ -1,13 +1,16 @@
 let activeEffect;
+const effectStack = []
 export function effect(fn) {
   const effectFn = () => {
     try {
       // 收集effect
       activeEffect = effectFn
+      effectStack.push(activeEffect)
+
       fn()
     } finally {
-      // TODO：错误处理
-      activeEffect = null
+      effectStack.pop()
+      activeEffect = effectStack[effectStack.length - 1]
     }
   }
 
