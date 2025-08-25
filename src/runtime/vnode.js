@@ -1,6 +1,6 @@
 import { isNumber, isString } from "../utils/index.js";
 
-const ShapeFlags = {
+export const ShapeFlags = {
   ELEMENT: 1, // 00000001
   TEXT: 1 << 1, // 00000010
   FRAGMENT: 1 << 2, // 00000100
