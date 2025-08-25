@@ -7,6 +7,14 @@ export function hasChanged(oldValue, newValue) {
   return oldValue !== newValue && !(isNaN(oldValue) && isNaN(newValue))
 }
 
+export function isString(target) {
+  return typeof target === 'string'
+}
+
+export function isNumber(target) {
+  return typeof target === 'number'
+}
+
 export function isArray(target) {
   return Array.isArray(target)
 }
