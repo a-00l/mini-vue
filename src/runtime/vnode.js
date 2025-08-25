@@ -1,4 +1,4 @@
-import { isNumber, isString } from "../utils/index.js";
+import { isArray, isNumber, isString } from "../utils/index.js";
 
 export const ShapeFlags = {
   ELEMENT: 1, // 00000001
@@ -10,8 +10,8 @@ export const ShapeFlags = {
   CHILDREN: (1 << 4) | (1 << 5), //00110000
 };
 
-const Text = Symbol('Text')
-const Fragment = Symbol('Fragment')
+export const Text = Symbol('Text')
+export const Fragment = Symbol('Fragment')
 
 /**
  * 
@@ -21,7 +21,7 @@ const Fragment = Symbol('Fragment')
  * @returns  VNode
  */
 export function h(type, props, children) {
-  const shapeFlag = 0
+  let shapeFlag = 0
   if (type === Text) {
     shapeFlag = ShapeFlags.TEXT
   } else if (type === Fragment) {
