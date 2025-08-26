@@ -1,110 +1,194 @@
-import { isBoolean } from "../utils/index.js"
+import { patchProps } from "./patchProps.js"
 import { ShapeFlags } from "./vnode.js"
-// 渲染虚拟函数
+
 export function render(vnode, container) {
-  mount(vnode, container)
+  const prevVNode = container._vnode
+  if (!vnode) {
+    if (prevVNode) {
+      unmount(prevVNode, container)
+    }
+  } else {
+    // 比较两个dom有什么不同
+    patch(prevVNode, vnode, container)
+  }
+
+  container._vnode = vnode
 }
 
-// 挂载到dom
-export function mount(vnode, container) {
-  const { shapeFlag } = vnode
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    mountElement(vnode, container)
-  } else if (shapeFlag & ShapeFlags.TEXT) {
-    mountTextVNode(vnode, container)
+function unmount(vnode, container) {
+  const { shapeFlag, el } = vnode
+  if (shapeFlag & ShapeFlags.COMPONENT) {
+    // 卸载组件
+    unmountComponents(vnode)
   } else if (shapeFlag & ShapeFlags.FRAGMENT) {
-    mountFragment(vnode, container)
+    // 卸载Fragment
+    unmountFragment(vnode)
   } else {
-    mountComponent(vnode, container)
+    // 卸载Text、Element节点
+    container.removeChild(el)
   }
 }
 
-// 挂载dom节点
-function mountElement(vnode, container) {
-  const el = document.createElement(vnode.type)
-  // 设置props
-  mountProps(vnode, el)
-  // 设置children
-  mountChildren(vnode, el)
-  container.appendChild(el)
+function unmountComponents(vnode) {
+  //  TODO
 }
 
-// 挂载文本节点
-function mountTextVNode(vnode, container) {
-  // 创建虚拟字符串dom
-  const text = document.createTextNode(vnode.children)
-  container.appendChild(text)
+function unmountFragment(vnode) {
+  //  TODO
 }
 
-// 空节点,将他的children挂载到父节点下
-function mountFragment(vnode, container) {
-  mountChildren(vnode, container)
-}
-
-// TODO:组件挂载
-function mountComponent(vnode, container) {
-
-}
-
-// 检查boolean属性
-const domPropsRE = /[A-Z]|^(value|checked|selected|muted|disabled)$/;
-// 设置props
-function mountProps(vnode, el) {
-  const { props } = vnode
-
-  for (const key in props) {
-    let value = props[key]
-    switch (key) {
-      // 处理class属性
-      case 'class':
-        el.class = value
-        break;
-      // 处理style属性
-      case 'style':
-        // 设置style
-        for (const styleName in value) {
-          el.style[styleName] = value[styleName]
-        }
-        break;
-      default:
-        // 处理事件
-        if (/^on[A-Z]/.test(key)) {
-          const event = key.slice(2).toLocaleLowerCase()
-
-          el.addEventListener(event, value)
-        } else if (domPropsRE.test(key)) {
-          // 特殊情况,boolean属性设置为空
-          if (value === '' && isBoolean(el[key])) {
-            value = true
-          }
-
-          // 处理checked这类Boolean属性
-          el[key] = value
-        } else {
-          // 特殊情况,之位空或设置为false,则删除该属性
-          if (value === null || value === false) {
-            el.removeAttribute(key)
-          } else {
-            // 设置普通属性
-            el.setAttribute(key, value)
-          }
-        }
-        break;
+// 比较两个节点的不同
+function patch(n1, n2, container, anchor) {
+  if (n1 && !isSameType(n1, n2)) {
+    unmount(n1, container)
+  } else {
+    const { shapeFlag } = n2
+    if (shapeFlag & ShapeFlags.COMPONENT) {
+      processComponents(n1, n2, container, anchor)
+    } else if (shapeFlag & ShapeFlags.TEXT) {
+      processText(n1, n2, container, anchor)
+    } else if (shapeFlag & ShapeFlags.FRAGMENT) {
+      processFragment(n1, n2, container, anchor)
+    } else {
+      processElement(n1, n2, container, anchor)
     }
   }
 }
 
-// 挂载children节点
-function mountChildren(vnode, container) {
-  const { shapeFlag, children } = vnode
-  // children为字符串
-  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
-    mountTextVNode(vnode, container)
-  }
-  // children为数组:([h()])
-  else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-    children.forEach(children => {
-      mount(children, container)
-    })
+function processComponents() {
+  // TODO
+}
+
+// 处理新节点为Fragment
+function processFragment(n1, n2, container, anchor) {
+  const framentStartAnchor = n2.el = n1.el ? n1.el : document.createTextNode('')
+  const framentEndAnchor = n2.anchor = n1.anchor ? n1.anchor : document.createTextNode('')
+  if (n1) {
+    patchChildren(n1, n2, container, framentEndAnchor)
+  } else {
+    container.insertBefore(framentStartAnchor, anchor)
+    container.insertBefore(framentEndAnchor, anchor)
+    mountChildren(n2.children, container, framentEndAnchor)
   }
 }
+
+// 处理新节点为Element
+function processElement(n1, n2, container, anchor) {
+  if (n1) {
+    patchElement(n1, n2, container)
+  } else {
+    mountElement(n2, container, anchor)
+  }
+}
+
+// 处理新节点为Text
+function processText(n1, n2, container, anchor) {
+  if (n1) {
+    n2.el = n1.el
+    n1.el.textContent = n2.children
+  } else {
+    mountTextVNode(n2, container, anchor)
+  }
+}
+
+// 比较两个vnode节点的区别
+function patchElement(n1, n2) {
+  n2.el = n1.el
+  patchProps(n1.props, n2.props, n2.el)
+  patchChildren(n1, n2, n2.el)
+}
+
+
+// 比较n1和n2的children的区别
+function patchChildren(n1, n2, container, anchor) {
+  const { shapeFlag: prevShapeFlag, children: c1 } = n1
+  const { shapeFlag, children: c2 } = n2
+  // n2可能：TEXT、ARRAY、NULL
+  // 每个n2下面n1都可能为：TEXT、ARRAY、NULL
+  // 一共九种可能
+  if (shapeFlag & ShapeFlags.TEXT) {
+    if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      unmountChildren(c1)
+    }
+
+    container.textContent = c2
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    if (prevShapeFlag & ShapeFlags.TEXT) {
+      container.textContent = ''
+      // 挂载children
+      mountChildren(n2, container, anchor)
+    } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      patchArrayChildren(c1, c2, container, anchor)
+    } else {
+      mountChildren(n2, container, anchor)
+    }
+  } else {
+    if (prevShapeFlag & ShapeFlags.TEXT) {
+      container.textContent = ''
+    } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      unmountChildren(c1)
+    }
+  }
+}
+
+function patchArrayChildren(c1, c2, container, anchor) {
+  const oldLength = c1.length
+  const newLength = c2.length
+  const commonLength = Math.min(oldLength, newLength)
+  // 将公共的children进行比较
+  for (let i = 0; i < commonLength; i++) {
+    patch(c1[i], c2[i], container, anchor)
+  }
+
+  if (oldLength > newLength) {
+    // 卸载旧值多出来的children
+    unmountChildren(c1.slice(commonLength))
+  } else {
+    // 挂载新值多出来的children
+    mountChildren(c2.slice(commonLength), container, anchor)
+  }
+}
+// 卸载children
+function unmountChildren(children) {
+  children.forEach(child => {
+    unmount(child)
+  })
+}
+
+// 挂载文本节点
+function mountTextVNode(vnode, container, anchor) {
+  // 创建虚拟字符串dom
+  const text = document.createTextNode(vnode.children)
+  container.insertBefore(text, anchor)
+  // 记录节点
+  vnode.el = text
+}
+
+// 挂载dom节点
+function mountElement(vnode, container, anchor) {
+  const { shapeFlag, children } = vnode
+  const el = document.createElement(vnode.type)
+  // 设置props
+  patchProps(null, vnode, el)
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+    mountTextVNode(vnode, el, anchor)
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    mountChildren(children, el, anchor)
+  }
+
+  container.insertBefore(el, anchor)
+  // 记录节点
+  vnode.el = el
+}
+
+// 挂载children节点
+function mountChildren(children, container, anchor) {
+  children.forEach(child => {
+    patch(null, child, container, anchor)
+  })
+}
+
+function isSameType(n1, n2) {
+  return n1.type === n2.type
+}
+
