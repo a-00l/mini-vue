@@ -41,18 +41,20 @@ function unmountFragment(vnode) {
 function patch(n1, n2, container, anchor) {
   if (n1 && !isSameType(n1, n2)) {
     unmount(n1, container)
-  } else {
-    const { shapeFlag } = n2
-    if (shapeFlag & ShapeFlags.COMPONENT) {
-      processComponents(n1, n2, container, anchor)
-    } else if (shapeFlag & ShapeFlags.TEXT) {
-      processText(n1, n2, container, anchor)
-    } else if (shapeFlag & ShapeFlags.FRAGMENT) {
-      processFragment(n1, n2, container, anchor)
-    } else {
-      processElement(n1, n2, container, anchor)
-    }
+    n1 = null
   }
+
+  const { shapeFlag } = n2
+  if (shapeFlag & ShapeFlags.COMPONENT) {
+    processComponents(n1, n2, container, anchor)
+  } else if (shapeFlag & ShapeFlags.TEXT) {
+    processText(n1, n2, container, anchor)
+  } else if (shapeFlag & ShapeFlags.FRAGMENT) {
+    processFragment(n1, n2, container, anchor)
+  } else {
+    processElement(n1, n2, container, anchor)
+  }
+
 }
 
 function processComponents() {
@@ -61,14 +63,14 @@ function processComponents() {
 
 // 处理新节点为Fragment
 function processFragment(n1, n2, container, anchor) {
-  const framentStartAnchor = n2.el = n1.el ? n1.el : document.createTextNode('')
-  const framentEndAnchor = n2.anchor = n1.anchor ? n1.anchor : document.createTextNode('')
+  const fragmentStartAnchor = n2.el = n1 ? n1.el : document.createTextNode('')
+  const fragmentEndAnchor = n2.anchor = n1 ? n1.anchor : document.createTextNode('')
   if (n1) {
-    patchChildren(n1, n2, container, framentEndAnchor)
+    patchChildren(n1, n2, container, fragmentEndAnchor)
   } else {
-    container.insertBefore(framentStartAnchor, anchor)
-    container.insertBefore(framentEndAnchor, anchor)
-    mountChildren(n2.children, container, framentEndAnchor)
+    container.insertBefore(fragmentStartAnchor, anchor)
+    container.insertBefore(fragmentEndAnchor, anchor)
+    mountChildren(n2.children, container, fragmentEndAnchor)
   }
 }
 
@@ -171,9 +173,9 @@ function mountElement(vnode, container, anchor) {
   // 设置props
   patchProps(null, vnode, el)
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
-    mountTextVNode(vnode, el, anchor)
+    mountTextVNode(vnode, el)
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-    mountChildren(children, el, anchor)
+    mountChildren(children, el)
   }
 
   container.insertBefore(el, anchor)

@@ -1,10 +1,23 @@
-import { effect } from "./reactive/effect.js";
-import { reactive } from "./reactive/reactive.js";
-const state = reactive({
-  count: 0
-})
+import { render } from "./runtime/render.js";
+import { Fragment, h } from "./runtime/vnode.js";
 
-window.state = state
-effect(() => {
-  console.log('调用：' + state.count);
-})
+render(
+  h('ul', null, [
+    h('li', null, 'first'),
+    h(Fragment, null, []),
+    h('li', null, 'last'),
+  ]),
+  document.body
+);
+setTimeout(() => {
+  render(
+    h('ul', null, [
+      h('li', null, 'first'),
+      h(Fragment, null, [
+        h('li', null, 'middle'),
+      ]),
+      h('li', null, 'last'),
+    ]),
+    document.body
+  );
+}, 2000);
