@@ -5,7 +5,7 @@ export function render(vnode, container) {
   const prevVNode = container._vnode
   if (!vnode) {
     if (prevVNode) {
-      unmount(prevVNode, container)
+      unmount(prevVNode)
     }
   } else {
     // 比较两个dom有什么不同
@@ -15,7 +15,7 @@ export function render(vnode, container) {
   container._vnode = vnode
 }
 
-function unmount(vnode, container) {
+function unmount(vnode) {
   const { shapeFlag, el } = vnode
   if (shapeFlag & ShapeFlags.COMPONENT) {
     // 卸载组件
@@ -25,7 +25,7 @@ function unmount(vnode, container) {
     unmountFragment(vnode)
   } else {
     // 卸载Text、Element节点
-    container.removeChild(el)
+    el.parentNode.removeChild(el)
   }
 }
 
@@ -33,14 +33,24 @@ function unmountComponents(vnode) {
   //  TODO
 }
 
+// 删除所有fragment节点
 function unmountFragment(vnode) {
-  //  TODO
+  const { el: cur, anchor: end } = vnode
+  const { parentNode } = cur;
+  while (cur != end) {
+    const next = cur.nextSibling
+    parentNode.removeChild(cur)
+    cur = next
+  }
+
+  parentNode.removeChild(end)
 }
 
 // 比较两个节点的不同
 function patch(n1, n2, container, anchor) {
   if (n1 && !isSameType(n1, n2)) {
-    unmount(n1, container)
+    anchor = (n1.anchor || n1.el).nextSibling
+    unmount(n1)
     n1 = null
   }
 
@@ -108,14 +118,14 @@ function patchChildren(n1, n2, container, anchor) {
   // n2可能：TEXT、ARRAY、NULL
   // 每个n2下面n1都可能为：TEXT、ARRAY、NULL
   // 一共九种可能
-  if (shapeFlag & ShapeFlags.TEXT) {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       unmountChildren(c1)
     }
 
     container.textContent = c2
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-    if (prevShapeFlag & ShapeFlags.TEXT) {
+    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
       container.textContent = ''
       // 挂载children
       mountChildren(n2, container, anchor)
@@ -125,7 +135,7 @@ function patchChildren(n1, n2, container, anchor) {
       mountChildren(n2, container, anchor)
     }
   } else {
-    if (prevShapeFlag & ShapeFlags.TEXT) {
+    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
       container.textContent = ''
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       unmountChildren(c1)
@@ -171,7 +181,7 @@ function mountElement(vnode, container, anchor) {
   const { shapeFlag, children } = vnode
   const el = document.createElement(vnode.type)
   // 设置props
-  patchProps(null, vnode, el)
+  patchProps(null, vnode.props, el)
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     mountTextVNode(vnode, el)
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
