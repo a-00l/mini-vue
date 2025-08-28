@@ -64,7 +64,6 @@ function patch(n1, n2, container, anchor) {
   } else {
     processElement(n1, n2, container, anchor)
   }
-
 }
 
 function processComponents() {
@@ -110,7 +109,6 @@ function patchElement(n1, n2) {
   patchChildren(n1, n2, n2.el)
 }
 
-
 // 比较n1和n2的children的区别
 function patchChildren(n1, n2, container, anchor) {
   const { shapeFlag: prevShapeFlag, children: c1 } = n1
@@ -130,7 +128,13 @@ function patchChildren(n1, n2, container, anchor) {
       // 挂载children
       mountChildren(n2, container, anchor)
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      patchArrayChildren(c1, c2, container, anchor)
+      if (c1[0] && c1[0].key != null && c2[0] && c2[0].key != null) {
+        // 有key
+        patchKeyedChildren(c1, c2, container, anchor)
+      } else {
+        // 没key
+        patchArrayChildren(c1, c2, container, anchor)
+      }
     } else {
       mountChildren(n2, container, anchor)
     }
@@ -139,6 +143,103 @@ function patchChildren(n1, n2, container, anchor) {
       container.textContent = ''
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       unmountChildren(c1)
+    }
+  }
+}
+
+function patchKeyedChildren(c1, c2, container, anchor) {
+  const i = 0;
+  const e1 = c1.length - 1
+  const e2 = c2.length - 1
+
+  // 1.从左至右依次对比
+  while (i <= e1 && i <= e2 && c1[i].key === c2[i].key) {
+    patch(c1[i], c2[i], container, anchor)
+    i++
+  }
+
+  // 2.从右至左依次对比
+  while (i <= e1 && i <= e2 && c1[e1].key === c2[e2].key) {
+    patch(c1[e1], c2[e2], container, anchor)
+    e1--
+    e2--
+  }
+
+  if (i > e1) {
+    // 3.经过1、2直接将旧结点比对完，则剩下的新结点直接mount
+    for (let j = i; j <= e2; j++) {
+      const nextPos = e2 + 1
+      const curAnchor = c2[nextPos] ? c2[nextPos].el : anchor
+      patch(null, c2[j], container, curAnchor)
+    }
+  } else if (i > e2) {
+    // 3.经过1、2直接将旧结点比对完，则剩下的新结点直接unmount
+    for (let j = i; j <= e1; j++) {
+      unmount(c1[j])
+    }
+  } else {
+    // 4.若不满足 3，采用传统 diff 算法，但不真的添加和移动，只做标记和删除 取得一个 source 数组
+    const map = new Map()
+    const source = new Array(e2 - i + 1).fill(-1)
+    // 将所有旧节点保存至map
+    c1.forEach((prev, j) => {
+      map.set(prev.key, { prev, j })
+    })
+
+    let maxNewIndex = 0
+    const toMounted = []
+    for (let k = 0; k < c2.length; k++) {
+      const next = c2[k]
+      let move = false
+      if (map.has(next.key)) {
+        const { prev, j } = map.get(next.key)
+        // 进行比较
+        patch(prev, next, container, anchor)
+        // 如果j在maxNewIndex左边，则移动
+        if (j < maxNewIndex) {
+          move = true
+        } else {
+          maxNewIndex = j
+        }
+
+        // 记录新数组的元素在旧数组中的下标
+        source[k] = j
+        // 删除操作后的key
+        map.delete(next.key)
+      } else {
+        toMounted.push(k + i)
+      }
+
+      // 最后剩下的就是新节点中没有的dom，可以删除
+      map.forEach(({ prev }) => unmount(prev))
+      if (move) {
+        // 5.需要移动，则采用新的最长上升子序列算法
+        const seq = setSequence(source)
+        const j = seq.length - 1
+        for (let k = source.length - 1; k >= 0; k--) {
+          if (seq[k] === j) {
+            j--
+          } else {
+            const pos = k + i
+            const nextIndex = pos + 1
+            const curAnchor = c2[nextIndex] ? c2[nextIndex].el : anchor
+            if (source[k] === -1) {
+              // mount
+              patch(null, c2[pos], container, curAnchor)
+            } else {
+              // 移动
+              container.insertBefore(c2[pos].el, curAnchor)
+            }
+          }
+        }
+      } else if (toMounted.length) {
+        for (let k = toMounted.length - 1; k >= 0; k--) {
+          const pos = toMounted[k]
+          const nextIndex = pos + 1
+          const curAnchor = c2[nextIndex] ? c2[nextIndex].el : anchor
+          patch(null, c2[pos], container, curAnchor)
+        }
+      }
     }
   }
 }
