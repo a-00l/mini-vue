@@ -35,7 +35,7 @@ function unmountComponents(vnode) {
 
 // 删除所有fragment节点
 function unmountFragment(vnode) {
-  const { el: cur, anchor: end } = vnode
+  let { el: cur, anchor: end } = vnode
   const { parentNode } = cur;
   while (cur != end) {
     const next = cur.nextSibling
@@ -126,17 +126,17 @@ function patchChildren(n1, n2, container, anchor) {
     if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
       container.textContent = ''
       // 挂载children
-      mountChildren(n2, container, anchor)
+      mountChildren(c2, container, anchor)
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       if (c1[0] && c1[0].key != null && c2[0] && c2[0].key != null) {
         // 有key
         patchKeyedChildren(c1, c2, container, anchor)
       } else {
         // 没key
-        patchArrayChildren(c1, c2, container, anchor)
+        patchUnkeyedChildren(c1, c2, container, anchor)
       }
     } else {
-      mountChildren(n2, container, anchor)
+      mountChildren(c2, container, anchor)
     }
   } else {
     if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
@@ -148,9 +148,9 @@ function patchChildren(n1, n2, container, anchor) {
 }
 
 function patchKeyedChildren(c1, c2, container, anchor) {
-  const i = 0;
-  const e1 = c1.length - 1
-  const e2 = c2.length - 1
+  let i = 0;
+  let e1 = c1.length - 1
+  let e2 = c2.length - 1
 
   // 1.从左至右依次对比
   while (i <= e1 && i <= e2 && c1[i].key === c2[i].key) {
@@ -244,7 +244,54 @@ function patchKeyedChildren(c1, c2, container, anchor) {
   }
 }
 
-function patchArrayChildren(c1, c2, container, anchor) {
+// 获取最长递增子序列
+function setSequence(nums) {
+  // 存储子序列
+  const arr = [nums[0]]
+  const position = [0]
+  // 遍历source数组，构建arr和position
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] === -1) {
+      continue
+    }
+
+    // 情况1：当前元素大于arr末尾元素 → 直接加入arr，构成更长的递增子序列
+    if (arr[arr.length - 1] < nums[i]) {
+      arr.push(nums[i])
+      position.push(arr.length - 1)
+    }
+    // 情况2：当前元素小于等于arr末尾元素 → 二分查找arr中第一个大于等于nums[i]的位置，替换该位置元素
+    else {
+      let left = 0, right = arr.length - 1
+      while (left <= right) {
+        const middle = Math.floor((right + left) / 2)
+        if (nums[i] > arr[middle]) {
+          left = middle + 1
+        } else if (nums[i] < arr[middle]) {
+          right = middle - 1
+        } else {
+          left = middle
+          break
+        }
+      }
+
+      arr[left] = nums[i]
+      position.push(left)
+    }
+  }
+
+  let cur = arr.length - 1
+  // 从后往前遍历position，找到每个cur位置对应的source索引，填充到arr中
+  for (let i = position.length - 1; i >= 0 && cur >= 0; i--) {
+    if (position[i] === cur) {
+      arr[cur--] = i
+    }
+  }
+
+  return arr
+}
+
+function patchUnkeyedChildren(c1, c2, container, anchor) {
   const oldLength = c1.length
   const newLength = c2.length
   const commonLength = Math.min(oldLength, newLength)

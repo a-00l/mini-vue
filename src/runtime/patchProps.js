@@ -10,6 +10,10 @@ export function patchProps(oldProps, newProps, el) {
   for (const key in newProps) {
     const oldValue = oldProps[key]
     const newValue = newProps[key]
+    if (key === 'key') {
+      continue
+    }
+
     if (newValue != oldValue) {
       patchDomProp(newValue, oldValue, key, el)
     }
@@ -17,7 +21,7 @@ export function patchProps(oldProps, newProps, el) {
 
   // 删除旧的属性
   for (const key in oldProps) {
-    if (newProps[key] === null) {
+    if (key !== 'key' && newProps[key] === null) {
       patchDomProp(oldProps[key], null, key, el)
     }
   }
