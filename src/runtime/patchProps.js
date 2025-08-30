@@ -1,3 +1,5 @@
+import { isBoolean } from "../utils/index.js"
+
 // 设置props
 export function patchProps(oldProps, newProps, el) {
   if (oldProps === newProps) {
@@ -14,14 +16,14 @@ export function patchProps(oldProps, newProps, el) {
       continue
     }
 
-    if (newValue != oldValue) {
+    if (newValue !== oldValue) {
       patchDomProp(oldValue, newValue, key, el)
     }
   }
 
   // 删除旧的属性
   for (const key in oldProps) {
-    if (key !== 'key' && newProps[key] === null) {
+    if (key !== 'key' && newProps[key] == null) {
       patchDomProp(oldProps[key], null, key, el)
     }
   }
@@ -33,20 +35,28 @@ function patchDomProp(oldValue, newValue, key, el) {
   switch (key) {
     // 处理class属性
     case 'class':
-      el.class = newValue
+      if (newValue) {
+        el.className = newValue
+      } else {
+        el.removeAttribute('class')
+      }
       break;
     // 处理style属性
     case 'style':
-      // 设置style
-      for (const styleName in newValue) {
-        el.style[styleName] = newValue[styleName]
-      }
+      if (!newValue) {
+        el.removeAttribute('style')
+      } else {
+        // 设置style
+        for (const styleName in newValue) {
+          el.style[styleName] = newValue[styleName]
+        }
 
-      // 如果oldValue中有newValue没有的style属性，则将该属性设置为空
-      if (oldValue) {
-        for (const oldKay in oldValue) {
-          if (newValue[oldKay] === null) {
-            el.style[oldKay] = ''
+        // 如果oldValue中有newValue没有的style属性，则将该属性设置为空
+        if (oldValue) {
+          for (const oldKay in oldValue) {
+            if (newValue[oldKay] == null) {
+              el.style[oldKay] = ''
+            }
           }
         }
       }
@@ -55,9 +65,10 @@ function patchDomProp(oldValue, newValue, key, el) {
       // 处理事件
       if (/^on[A-Z]/.test(key)) {
         const event = key.slice(2).toLocaleLowerCase()
+
         // 删除旧的事件，添加新的事件
         if (oldValue) {
-          el.removeEventListener(event, newValue)
+          el.removeEventListener(event, oldValue)
         }
 
         if (newValue) {
@@ -73,7 +84,7 @@ function patchDomProp(oldValue, newValue, key, el) {
         el[key] = newValue
       } else {
         // 特殊情况,属性为空或设置为false,则删除该属性
-        if (newValue === null || newValue === false) {
+        if (newValue == null || newValue === false) {
           el.removeAttribute(key)
         } else {
           // 设置普通属性
