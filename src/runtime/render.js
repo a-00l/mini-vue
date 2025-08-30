@@ -182,15 +182,16 @@ function patchKeyedChildren(c1, c2, container, anchor) {
     const map = new Map()
     const source = new Array(e2 - i + 1).fill(-1)
     // 将所有旧节点保存至map
-    c1.forEach((prev, j) => {
+    for (let j = i; j <= e1; j++) {
+      const prev = c1[j]
       map.set(prev.key, { prev, j })
-    })
+    }
 
+    let move = false
     let maxNewIndex = 0
     const toMounted = []
-    for (let k = 0; k < c2.length; k++) {
-      const next = c2[k]
-      let move = false
+    for (let k = 0; k < source.length; k++) {
+      const next = c2[k + i]
       if (map.has(next.key)) {
         const { prev, j } = map.get(next.key)
         // 进行比较
@@ -209,36 +210,37 @@ function patchKeyedChildren(c1, c2, container, anchor) {
       } else {
         toMounted.push(k + i)
       }
+    }
 
-      // 最后剩下的就是新节点中没有的dom，可以删除
-      map.forEach(({ prev }) => unmount(prev))
-      if (move) {
-        // 5.需要移动，则采用新的最长上升子序列算法
-        const seq = setSequence(source)
-        const j = seq.length - 1
-        for (let k = source.length - 1; k >= 0; k--) {
-          if (seq[k] === j) {
-            j--
-          } else {
-            const pos = k + i
-            const nextIndex = pos + 1
-            const curAnchor = c2[nextIndex] ? c2[nextIndex].el : anchor
-            if (source[k] === -1) {
-              // mount
-              patch(null, c2[pos], container, curAnchor)
-            } else {
-              // 移动
-              container.insertBefore(c2[pos].el, curAnchor)
-            }
-          }
-        }
-      } else if (toMounted.length) {
-        for (let k = toMounted.length - 1; k >= 0; k--) {
-          const pos = toMounted[k]
+    // 最后剩下的就是新节点中没有的dom，可以删除
+    map.forEach(({ prev }) => unmount(prev))
+    if (move) {
+      // 5.需要移动，则采用新的最长上升子序列算法
+      const seq = setSequence(source)
+      let j = seq.length - 1
+      for (let k = source.length - 1; k >= 0; k--) {
+        if (seq[j] === k) {
+          // 不移动
+          j--
+        } else {
+          const pos = k + i
           const nextIndex = pos + 1
           const curAnchor = c2[nextIndex] ? c2[nextIndex].el : anchor
-          patch(null, c2[pos], container, curAnchor)
+          if (source[k] === -1) {
+            // mount
+            patch(null, c2[pos], container, curAnchor)
+          } else {
+            // 移动
+            container.insertBefore(c2[pos].el, curAnchor)
+          }
         }
+      }
+    } else if (toMounted.length) {
+      for (let k = toMounted.length - 1; k >= 0; k--) {
+        const pos = toMounted[k]
+        const nextIndex = pos + 1
+        const curAnchor = c2[nextIndex] ? c2[nextIndex].el : anchor
+        patch(null, c2[pos], container, curAnchor)
       }
     }
   }
