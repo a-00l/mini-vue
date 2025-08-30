@@ -15,7 +15,7 @@ export function patchProps(oldProps, newProps, el) {
     }
 
     if (newValue != oldValue) {
-      patchDomProp(newValue, oldValue, key, el)
+      patchDomProp(oldValue, newValue, key, el)
     }
   }
 
@@ -57,7 +57,7 @@ function patchDomProp(oldValue, newValue, key, el) {
         const event = key.slice(2).toLocaleLowerCase()
         // 删除旧的事件，添加新的事件
         if (oldValue) {
-          el.removeEventListener(event)
+          el.removeEventListener(event, newValue)
         }
 
         if (newValue) {
