@@ -1,0 +1,93 @@
+import { effect } from "../reactive/effect.js"
+import { reactive } from "../reactive/reactive.js"
+import { patch } from "./render.js"
+import { normalizeVNode } from "./vnode.js"
+
+function updateProps(instance, vnode) {
+  const { type: Component, props: vnodeProps } = vnode
+  const props = (instance.props = {})
+  const attrs = (instance.attrs = {})
+
+  // 区分属性和props
+  for (const key in vnodeProps) {
+    if (Component.props?.includes(key)) {
+      props[key] = vnodeProps[key]
+    } else {
+      attrs[key] = vnodeProps[key]
+    }
+  }
+
+  instance.props = reactive(instance.props)
+}
+
+export function mountComponent(vnode, container, anchor) {
+  const { type: Component } = vnode
+  // 组件实例
+  const instance = (vnode.component = {
+    props: null,
+    attrs: null,
+    setupState: null,
+    mount: null,
+    isMounted: false, // 第一次挂载组件
+    subTree: null, // 记录旧的节点
+    update: null, // 更新组件函数
+    ctx: null, // 用于组件中render(ctx)函数的参数
+    next: null
+  })
+
+  // 区分props和attrs
+  updateProps(instance, vnode)
+  // 获取setup组件中返回的值
+  instance.setupState = Component.setup?.(instance.props, { attrs: instance.attrs })
+
+  instance.ctx = {
+    ...instance.props,
+    ...instance.setupState,
+  }
+
+  // 更新dom
+  instance.update = effect(() => {
+    // 第一次执行mount挂载组件
+    // 第二次更新组件
+    if (!instance.isMounted) {
+      const subTree = (instance.subTree = createSubTree(Component, instance))
+
+      patch(null, subTree, container, anchor)
+      vnode.el = subTree.el
+      instance.isMounted = true
+    } else {
+      // 被动更新
+      if (instance.next) {
+        // 获取要更新的组件
+        vnode = instance.next
+        instance.next = null
+        // 设置新的props
+        updateProps(instance, vnode)
+        // 更新render参数（因为没有为instance.ctx添加Proxy，所以需要手动修改）
+        instance.ctx = {
+          ...instance.props,
+          ...instance.setupState,
+        }
+      }
+
+      const prev = instance.subTree
+      const subTree = (instance.subTree = createSubTree(Component, instance))
+
+      patch(prev, subTree, container, anchor)
+      vnode.el = subTree.el
+    }
+  })
+}
+
+// 抽取生成subTree的逻辑为函数
+const createSubTree = (Component, instance) => {
+  const subTree = normalizeVNode(Component.render(instance.ctx))
+  if (Object.keys(instance.attrs).length) {
+    subTree.props = {
+      ...subTree.props,
+      ...instance.attrs
+    }
+  }
+
+  return subTree
+}

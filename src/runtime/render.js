@@ -1,3 +1,4 @@
+import { mountComponent } from "./component.js"
 import { patchProps } from "./patchProps.js"
 import { ShapeFlags } from "./vnode.js"
 
@@ -47,7 +48,7 @@ function unmountFragment(vnode) {
 }
 
 // 比较两个节点的不同
-function patch(n1, n2, container, anchor) {
+export function patch(n1, n2, container, anchor) {
   if (n1 && !isSameType(n1, n2)) {
     anchor = (n1.anchor || n1.el).nextSibling
     unmount(n1)
@@ -66,8 +67,19 @@ function patch(n1, n2, container, anchor) {
   }
 }
 
-function processComponents() {
-  // TODO
+function processComponents(n1, n2, container, anchor) {
+  if (n1) {
+    updateComponents(n1, n2)
+  } else {
+    mountComponent(n2, container, anchor)
+  }
+}
+
+function updateComponents(n1, n2) {
+  n2.component = n1.component
+  // 记录要更新的组件
+  n2.component.next = n2
+  n2.component.update()
 }
 
 // 处理新节点为Fragment
@@ -330,7 +342,7 @@ function mountTextVNode(vnode, container, anchor) {
 function mountElement(vnode, container, anchor) {
   const { shapeFlag, children } = vnode
   const el = document.createElement(vnode.type)
-  // 设置props
+  // 设置props 
   patchProps(null, vnode.props, el)
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     mountTextVNode(vnode, el)
