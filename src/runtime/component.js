@@ -24,10 +24,9 @@ export function mountComponent(vnode, container, anchor) {
   const { type: Component } = vnode
   // 组件实例
   const instance = (vnode.component = {
-    props: null,
-    attrs: null,
+    props: null, // 组件接收参数
+    attrs: null, // props中没有接收的
     setupState: null,
-    mount: null,
     isMounted: false, // 第一次挂载组件
     subTree: null, // 记录旧的节点
     update: null, // 更新组件函数
@@ -70,7 +69,9 @@ export function mountComponent(vnode, container, anchor) {
         }
       }
 
+      // 获取上一个组件信息
       const prev = instance.subTree
+      // 获取当前组件信息
       const subTree = (instance.subTree = createSubTree(Component, instance))
 
       patch(prev, subTree, container, anchor)
@@ -81,7 +82,9 @@ export function mountComponent(vnode, container, anchor) {
 
 // 抽取生成subTree的逻辑为函数
 const createSubTree = (Component, instance) => {
+  // 获取要渲染的信息
   const subTree = normalizeVNode(Component.render(instance.ctx))
+  // 添加attr属性
   if (Object.keys(instance.attrs).length) {
     subTree.props = {
       ...subTree.props,
