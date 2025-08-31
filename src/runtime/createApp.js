@@ -1,0 +1,16 @@
+import { isString } from "../utils/index.js"
+import { render, h } from './index.js'
+
+export function createApp(rootComponent) {
+  const app = {
+    mount(rootContainer) {
+      if (isString(rootContainer)) {
+        rootContainer = document.querySelector(rootContainer)
+      }
+
+      render(h(rootComponent), rootContainer)
+    }
+  }
+
+  return app
+}
