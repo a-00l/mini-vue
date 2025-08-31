@@ -31,7 +31,7 @@ function unmount(vnode) {
 }
 
 function unmountComponents(vnode) {
-  //  TODO
+  unmount(vnode.component.subTree)
 }
 
 // 删除所有fragment节点

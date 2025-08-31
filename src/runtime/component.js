@@ -31,7 +31,7 @@ export function mountComponent(vnode, container, anchor) {
     subTree: null, // 记录旧的节点
     update: null, // 更新组件函数
     ctx: null, // 用于组件中render(ctx)函数的参数
-    next: null
+    next: null,
   })
 
   // 区分props和attrs
