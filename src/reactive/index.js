@@ -1,3 +1,5 @@
-import { computed } from "./computed";
-import { reactive } from "./reactive";
-import { ref } from './ref'
+export { effect } from "./effect.js";
+
+export { computed } from "./computed.js";
+export { reactive } from "./reactive.js";
+export { ref } from './ref.js'
