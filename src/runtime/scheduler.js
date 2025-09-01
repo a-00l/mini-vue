@@ -5,7 +5,7 @@ let currentFlushPromise = null
 let isFlush = false
 export function nextTick(fn) {
   const p = currentFlushPromise || resolvePromise
-  return p.then(fn)
+  return fn ? p.then(fn) : p
 }
 
 export function queueJob(job) {
