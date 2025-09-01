@@ -1,8 +1,4 @@
-import { effect } from "../reactive/effect.js"
-import { reactive } from "../reactive/reactive.js"
-import { patch } from "./render.js"
-import { queueJob } from "./scheduler.js"
-import { normalizeVNode } from "./vnode.js"
+import { effect, reactive, queueJob, normalizeVNode, patch } from "../reactive/index.js"
 
 function updateProps(instance, vnode) {
   const { type: Component, props: vnodeProps } = vnode
