@@ -4,7 +4,7 @@ export function isObject(target) {
 
 // 值是否改变，（NaN != NaN）
 export function hasChanged(oldValue, newValue) {
-  return oldValue !== newValue && !(isNaN(oldValue) && isNaN(newValue))
+  return oldValue !== newValue && !(Number.isNaN(oldValue) && Number.isNaN(newValue))
 }
 
 export function isString(target) {
