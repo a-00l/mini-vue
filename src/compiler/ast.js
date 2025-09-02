@@ -13,6 +13,11 @@ export const ElementTypes = {
   COMPONENT: 'COMPONENT',
 };
 
+/**
+ * 
+ * @param {object} children 
+ * @returns 根节点
+ */
 export function createRoot(children) {
   return {
     type: NodeTypes.ROOT,

@@ -22,3 +22,8 @@ export function isNumber(target) {
 export function isArray(target) {
   return Array.isArray(target)
 }
+
+// 驼峰化：s-s-s：sSS
+export function camelize(str) {
+  return str.replace(/-(\w)/g, (_, c) => c ? c.toUpperCase() : '')
+}
