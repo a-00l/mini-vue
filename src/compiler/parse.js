@@ -249,7 +249,7 @@ function parseText(context) {
   for (let i = 0; i < endTokens.length; i++) {
     const index = context.source.indexOf(endTokens[i])
     // 找到最靠左的结束位置
-    if (index < endIndex) {
+    if (index < endIndex && index != -1) {
       endIndex = index
     }
   }
