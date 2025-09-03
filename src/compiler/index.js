@@ -1,5 +1,6 @@
 export { parse } from './parse.js';
 export { NodeTypes, createRoot, ElementTypes } from "./ast.js";
+export { generate } from "./codegen.js";
 
 const HTML_TAGS =
   'html,body,base,head,link,meta,style,title,address,article,aside,footer,' +
