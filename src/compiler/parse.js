@@ -99,6 +99,11 @@ function parseInterpolation(context) {
 function parseElement(context) {
   // 解析开始标签
   const element = parseTag(context)
+
+  if (element.isSelfClosing || context.option.isVoidTag(element.tag)) {
+    return element;
+  }
+
   // 解析children
   element.children = parseChildren(context)
   // 解析末尾标签
