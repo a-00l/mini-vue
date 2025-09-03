@@ -127,7 +127,7 @@ function parseTag(context) {
   // 解析属性
   const { props, directives } = parseAttributes(context)
   // 是否为闭合标签
-  const isSelfClosing = match[0].includes('</')
+  const isSelfClosing = context.source.includes('/>')
   // 如果闭合<input />则删除/>，如果不是闭合<div>则删除>
   advanceBy(context, isSelfClosing ? 2 : 1)
 
