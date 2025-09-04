@@ -2,7 +2,14 @@ import { capitalize } from "../utils/index.js";
 import { NodeTypes } from "./index.js";
 
 export function generate(ast) {
-  return traversNode(ast)
+  const ats = traversNode(ast)
+  const code = `
+  with(ctx) {
+    const { h,Text} = MiniVue
+    return ${ats}
+  }
+  `
+  return code
 }
 
 function traversNode(node) {

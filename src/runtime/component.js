@@ -1,3 +1,4 @@
+import { compile } from "../compiler/compiler.js"
 import { effect, reactive, queueJob, normalizeVNode, patch } from "../reactive/index.js"
 
 function updateProps(instance, vnode) {
@@ -39,6 +40,14 @@ export function mountComponent(vnode, container, anchor) {
   instance.ctx = {
     ...instance.props,
     ...instance.setupState,
+  }
+
+  if (!Component.render && Component.template) {
+    const { template } = Component
+    const code = compile(template)
+    console.log(code);
+
+    Component.render = new Function('ctx', code)
   }
 
   // 更新dom

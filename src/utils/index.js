@@ -27,3 +27,8 @@ export function isArray(target) {
 export function camelize(str) {
   return str.replace(/-(\w)/g, (_, c) => c ? c.toUpperCase() : '')
 }
+
+// 大写第一个字母
+export function capitalize(content) {
+  return content[0].toUpperCase() + content.slice(1)
+}
