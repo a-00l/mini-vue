@@ -24,7 +24,7 @@ function traversNode(node) {
       return traverseChildren(node)
     case NodeTypes.ELEMENT:
       // 创建元素
-      return createElementNode(node)
+      return resolveElementATSNode(node)
     case NodeTypes.INTERPOLATION:
       // 创建指令节点
       return createTextNode(node.content)
@@ -32,6 +32,34 @@ function traversNode(node) {
       // 创建文本节点
       return createTextNode(node)
   }
+}
+
+function resolveElementATSNode(node) {
+  const forNode = pluck(node.directives, 'for')
+  console.log(node);
+
+  if (forNode) {
+    const exp = forNode.exp
+
+    // 分离(item, index) in items
+    const [args, source] = exp.content.split(/\sin\s|\sof\s/)
+    return `h(Fragment, null, renderList(${source}, ${args} => h('${node.tag}', null,${traverseChildren(node)}})))`
+  }
+
+  return createElementNode(node)
+}
+
+function pluck(directives, name, remove = true) {
+  // 寻找指令
+  const index = directives.findIndex(item => item.name === name)
+  // 保存指令
+  const dir = directives[index]
+  if (index > -1 && remove) {
+    // 删除该指令
+    // directives.splice(index, 1)
+  }
+
+  return dir
 }
 
 function createTextNode(node) {
