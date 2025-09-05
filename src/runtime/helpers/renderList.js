@@ -1,8 +1,6 @@
 import { isArray, isNumber, isObject, isString } from "../../utils/index.js";
 
 export function renderList(source, renderItem) {
-  console.log('renderList');
-  debugger
   const nodes = []
   if (isNumber(source)) {
     for (let i = 0; i < source; i++) {

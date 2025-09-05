@@ -45,7 +45,6 @@ export function mountComponent(vnode, container, anchor) {
   if (!Component.render && Component.template) {
     const { template } = Component
     const code = compile(template)
-    console.log(code);
 
     Component.render = new Function('ctx', code)
   }
