@@ -1,3 +1,4 @@
+export { renderList } from './helpers/renderList.js'
 export { createApp } from './createApp.js'
 export { render, patch } from './render.js'
 export { Fragment, Text, h, normalizeVNode } from './vnode.js'

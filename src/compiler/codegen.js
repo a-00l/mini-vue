@@ -3,12 +3,16 @@ import { NodeTypes } from "./index.js";
 
 export function generate(ast) {
   const ats = traversNode(ast)
+
+  console.log(ats);
   const code = `
   with(ctx) {
-    const { h,Text} = MiniVue
+  debugger
+    const { h,Text,Fragment, renderList} = MiniVue
     return ${ats}
   }
   `
+
   return code
 }
 
@@ -17,14 +21,17 @@ function traversNode(node) {
     case NodeTypes.ROOT:
       // 只有一个根节点
       if (node.children.length === 1) {
-        traversNode(node.children[0])
+        return traversNode(node.children[0])
       }
 
       // 有多个根节点
       return traverseChildren(node)
     case NodeTypes.ELEMENT:
+      const result = resolveElementATSNode(node)
+      console.log(result);
+
       // 创建元素
-      return resolveElementATSNode(node)
+      return result
     case NodeTypes.INTERPOLATION:
       // 创建指令节点
       return createTextNode(node.content)
@@ -36,17 +43,18 @@ function traversNode(node) {
 
 function resolveElementATSNode(node) {
   const forNode = pluck(node.directives, 'for')
-  console.log(node);
 
   if (forNode) {
     const exp = forNode.exp
-
     // 分离(item, index) in items
     const [args, source] = exp.content.split(/\sin\s|\sof\s/)
-    return `h(Fragment, null, renderList(${source}, ${args} => h('${node.tag}', null,${traverseChildren(node)}})))`
+    return `h(Fragment, null, renderList(${source.trim()}, ${args.trim()} => ${createElementNode(node)}))`
   }
 
-  return createElementNode(node)
+  const a = createElementNode(node)
+  console.log(a);
+
+  return a
 }
 
 function pluck(directives, name, remove = true) {
@@ -56,7 +64,7 @@ function pluck(directives, name, remove = true) {
   const dir = directives[index]
   if (index > -1 && remove) {
     // 删除该指令
-    // directives.splice(index, 1)
+    directives.splice(index, 1)
   }
 
   return dir
