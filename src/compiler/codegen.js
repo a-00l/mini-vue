@@ -4,10 +4,8 @@ import { NodeTypes } from "./index.js";
 export function generate(ast) {
   const ats = traversNode(ast)
 
-  console.log(ats);
   const code = `
   with(ctx) {
-  debugger
     const { h,Text,Fragment, renderList} = MiniVue
     return ${ats}
   }
@@ -27,11 +25,8 @@ function traversNode(node) {
       // 有多个根节点
       return traverseChildren(node)
     case NodeTypes.ELEMENT:
-      const result = resolveElementATSNode(node)
-      console.log(result);
-
       // 创建元素
-      return result
+      return resolveElementATSNode
     case NodeTypes.INTERPOLATION:
       // 创建指令节点
       return createTextNode(node.content)
@@ -51,10 +46,7 @@ function resolveElementATSNode(node) {
     return `h(Fragment, null, renderList(${source.trim()}, ${args.trim()} => ${createElementNode(node)}))`
   }
 
-  const a = createElementNode(node)
-  console.log(a);
-
-  return a
+  return createElementNode(node)
 }
 
 function pluck(directives, name, remove = true) {
