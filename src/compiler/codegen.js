@@ -2,12 +2,10 @@ import { capitalize } from "../utils/index.js";
 import { NodeTypes } from "./index.js";
 
 export function generate(ast) {
-  debugger
   const ats = traversNode(ast)
 
   const code = `
     with(ctx) {
-    debugger
     const { h,Text,Fragment, renderList} = MiniVue
     return ${ats}
   }`
@@ -38,8 +36,16 @@ function traversNode(node) {
 }
 
 function resolveElementATSNode(node) {
-  const forNode = pluck(node.directives, 'for')
+  const ifNode = pluck(node.directives, 'if')
+  if (ifNode) {
+    const condition = ifNode.exp.content
+    const consequent = resolveElementATSNode(node)
+    const alternate = createTextNode()
 
+    return `${condition} ? ${consequent} : ${alternate}`
+  }
+
+  const forNode = pluck(node.directives, 'for')
   if (forNode) {
     const exp = forNode.exp
     // 分离(item, index) in items
@@ -136,6 +142,6 @@ function traverseChildren(node) {
   return `[${results.join(', ')}]`
 }
 
-function createText({ isStatic = true, content }) {
+function createText({ isStatic = true, content = '' } = {}) {
   return isStatic ? JSON.stringify(content) : content
 }
