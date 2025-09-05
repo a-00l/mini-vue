@@ -2,14 +2,15 @@ import { capitalize } from "../utils/index.js";
 import { NodeTypes } from "./index.js";
 
 export function generate(ast) {
+  debugger
   const ats = traversNode(ast)
 
   const code = `
-  with(ctx) {
+    with(ctx) {
+    debugger
     const { h,Text,Fragment, renderList} = MiniVue
     return ${ats}
-  }
-  `
+  }`
 
   return code
 }
@@ -26,7 +27,7 @@ function traversNode(node) {
       return traverseChildren(node)
     case NodeTypes.ELEMENT:
       // 创建元素
-      return resolveElementATSNode
+      return resolveElementATSNode(node)
     case NodeTypes.INTERPOLATION:
       // 创建指令节点
       return createTextNode(node.content)
@@ -43,7 +44,7 @@ function resolveElementATSNode(node) {
     const exp = forNode.exp
     // 分离(item, index) in items
     const [args, source] = exp.content.split(/\sin\s|\sof\s/)
-    return `h(Fragment, null, renderList(${source.trim()}, ${args.trim()} => ${createElementNode(node)}))`
+    return `h(Fragment, null, renderList(${source.trim()}, ${args.trim()} => ${resolveElementATSNode(node)}))`
   }
 
   return createElementNode(node)
