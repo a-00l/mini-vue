@@ -13,19 +13,19 @@ export function generate(ast) {
   return code
 }
 
-function traversNode(node) {
+function traversNode(node, parent) {
   switch (node.type) {
     case NodeTypes.ROOT:
       // 只有一个根节点
       if (node.children.length === 1) {
-        return traversNode(node.children[0])
+        return traversNode(node.children[0], node)
       }
 
       // 有多个根节点
       return traverseChildren(node)
     case NodeTypes.ELEMENT:
       // 创建元素
-      return resolveElementATSNode(node)
+      return resolveElementATSNode(node, parent)
     case NodeTypes.INTERPOLATION:
       // 创建指令节点
       return createTextNode(node.content)
@@ -35,12 +35,37 @@ function traversNode(node) {
   }
 }
 
-function resolveElementATSNode(node) {
-  const ifNode = pluck(node.directives, 'if')
+function resolveElementATSNode(node, parent) {
+  // 处理if
+  const ifNode = pluck(node.directives, 'if') || pluck(node.directives, 'else-if')
   if (ifNode) {
     const condition = ifNode.exp.content
-    const consequent = resolveElementATSNode(node)
-    const alternate = createTextNode()
+    let consequent = resolveElementATSNode(node, parent)
+    let alternate = createTextNode()
+    // 处理else
+    const { children } = parent
+    // 寻找到if的位置
+    const ifIndex = children.findIndex(item => item === node) + 1
+    for (let i = ifIndex; i < children.length; i++) {
+      const sibling = children[i]
+      // 下一个节点是空节点则删除
+      if (sibling.type === NodeTypes.TEXT && !sibling.content.trim()) {
+        children.splice(i, 1)
+        i--
+        continue
+      }
+
+      if (sibling.type === NodeTypes.ELEMENT) {
+        // 如果下一个节点是else
+        if (pluck(sibling.directives, 'else') || pluck(sibling.directives, 'else-if', false)) {
+          alternate = resolveElementATSNode(sibling, parent)
+          // 删除该子节点
+          children.splice(i, 1)
+        }
+
+        break
+      }
+    }
 
     return `${condition} ? ${consequent} : ${alternate}`
   }
@@ -50,7 +75,7 @@ function resolveElementATSNode(node) {
     const exp = forNode.exp
     // 分离(item, index) in items
     const [args, source] = exp.content.split(/\sin\s|\sof\s/)
-    return `h(Fragment, null, renderList(${source.trim()}, ${args.trim()} => ${resolveElementATSNode(node)}))`
+    return `h(Fragment, null, renderList(${source.trim()}, ${args.trim()} => ${resolveElementATSNode(node, parent)}))`
   }
 
   return createElementNode(node)
@@ -86,7 +111,7 @@ function createElementNode(node) {
       return `h('${node.tag}')`
     }
 
-    return `h('${node.tag}', 'null',${propArr})`
+    return `h('${node.tag}',{${propArr}})`
   }
 
   const results = traverseChildren(node)
@@ -136,7 +161,7 @@ function traverseChildren(node) {
 
   const results = []
   for (let i = 0; i < children.length; i++) {
-    results.push(traversNode(children[i]))
+    results.push(traversNode(children[i], node))
   }
 
   return `[${results.join(', ')}]`
