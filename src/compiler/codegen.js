@@ -36,6 +36,37 @@ function traversNode(node, parent) {
 }
 
 function resolveElementATSNode(node, parent) {
+  const vModel = pluck(node.directives, 'model');
+
+  if (vModel) {
+    node.directives.push(
+      {
+        type: NodeTypes.DIRECTIVE,
+        name: 'bind',
+        exp: vModel.exp, // 表达式节点
+        arg: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: 'value',
+          isStatic: true,
+        }, // 表达式节点
+      },
+      {
+        type: NodeTypes.DIRECTIVE,
+        name: 'on',
+        exp: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: `($event) => ${vModel.exp.content} = $event.target.value`,
+          isStatic: false,
+        }, // 表达式节点
+        arg: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: 'input',
+          isStatic: true,
+        }, // 表达式节点
+      }
+    );
+  }
+
   // 处理if
   const ifNode = pluck(node.directives, 'if') || pluck(node.directives, 'else-if')
   if (ifNode) {
