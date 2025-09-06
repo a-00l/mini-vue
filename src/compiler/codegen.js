@@ -6,7 +6,7 @@ export function generate(ast) {
 
   const code = `
     with(ctx) {
-    const { h,Text,Fragment, renderList} = MiniVue
+    const { h,Text,Fragment, renderList, resolveComponent} = MiniVue
     return ${ats}
   }`
 
@@ -131,7 +131,9 @@ function createTextNode(node) {
 }
 
 function createElementNode(node) {
-  const { children } = node
+  const { children, tagType } = node
+  console.log(node);
+  const tag = tagType === NodeTypes.ELEMENT ? `'${node.tag}'` : `resolveComponent("${node.tag}")`
   // 解析属性：将属性放在数组中
   const propArr = createPropsArr(node)
   // 将数组的转为对象
@@ -139,14 +141,14 @@ function createElementNode(node) {
   if (!children.length) {
     // 没有属性
     if (propStr === 'null') {
-      return `h('${node.tag}')`
+      return `h(${tag})`
     }
 
-    return `h('${node.tag}',{${propArr}})`
+    return `h(${tag},{${propArr}})`
   }
 
   const results = traverseChildren(node)
-  return `h('${node.tag}', ${propStr}, ${results})`
+  return `h(${tag}, ${propStr}, ${results})`
 }
 
 // v-if='123'

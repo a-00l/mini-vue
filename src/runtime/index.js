@@ -1,3 +1,4 @@
+export { resolveComponent } from './createApp.js'
 export { renderList } from './helpers/renderList.js'
 export { createApp } from './createApp.js'
 export { render, patch } from './render.js'

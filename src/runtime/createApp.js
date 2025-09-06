@@ -1,11 +1,17 @@
-import { isString } from "../utils/index.js"
+import { camelize, capitalize, isString } from "../utils/index.js"
 import { render, h } from './index.js'
 
+let components;
 // rootComponent：外面setup、render组件参数
 export function createApp(rootComponent) {
   const app = {
     // rootContainer：挂载容器
     mount(rootContainer) {
+      console.log(rootComponent);
+
+      // 获取组件
+      components = rootComponent.components || {}
+
       // 处理mount('#app')这种写法
       if (isString(rootContainer)) {
         rootContainer = document.querySelector(rootContainer)
@@ -24,4 +30,17 @@ export function createApp(rootComponent) {
   }
 
   return app
+}
+
+/**
+ * @description 返回组件
+ * @param {string} name 组件名称 
+ * @returns 
+ */
+export function resolveComponent(name) {
+  return components && (
+    components[name] ||
+    components[camelize(capitalize(name))] ||
+    components[camelize(name)]
+  )
 }
